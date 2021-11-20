@@ -37,6 +37,16 @@ high_score = 0
 clock = pygame.time.Clock()
 
 # Game functions
+def draw_medal():
+    if 30 > score >= 10:
+        screen.blit(sprites['bronze_medal'][0], (72, 302))
+    elif score < 50:
+        screen.blit(sprites['silver_medal'][0], (72, 302))
+    elif score < 100:
+        screen.blit(sprites['gold_medal'][0], (72, 302))
+    else:
+        screen.blit(sprites['platinum_medal'][0], (72, 302))
+
 def draw_score():
     for i, num in enumerate(str(score)):
         screen.blit(sprites['large_numbers'][int(num)], ((screen_width // 2 - ((sprites['large_numbers'][int(num)].get_width() + 5) * len(str(score)) - 5) // 2) + (sprites['large_numbers'][int(num)].get_width() + 5) * i, 20))
@@ -49,6 +59,10 @@ def reset():
     # Reset Ground
     for ground in ground_group:
         ground.reset()
+
+    # Reset Score
+    global score
+    score = 0
 
 def menu(events):
     for event in events:
@@ -149,6 +163,7 @@ def game_over(events):
     bird_group.draw(screen)
     screen.blit(sprites['game_over'][0], (screen_width // 2 - sprites['game_over'][0].get_width() // 2, 100))
     screen.blit(sprites['leaderboard'][0], (screen_width // 2 - sprites['leaderboard'][0].get_width() // 2, screen_height // 2 - sprites['leaderboard'][0].get_height() // 2))
+    draw_medal()
 
 # Game Classes
 class Background(pygame.sprite.Sprite):

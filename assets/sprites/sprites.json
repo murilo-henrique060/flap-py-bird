@@ -91,5 +91,29 @@
             [3, 259]
         ],
         "size": [113, 57]
+    },
+    "bronze_medal": {
+        "start": [
+            [112, 477]
+        ],
+        "size": [22, 22]
+    },
+    "silver_medal": {
+        "start": [
+            [112, 453]
+        ],
+        "size": [22, 22]
+    },
+    "gold_medal": {
+        "start": [
+            [121, 282]
+        ],
+        "size": [22, 22]
+    },
+    "platinum_medal": {
+        "start": [
+            [121, 258]
+        ],
+        "size": [22, 22]
     }
 }
