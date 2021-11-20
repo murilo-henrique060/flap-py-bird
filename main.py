@@ -29,13 +29,22 @@ for sprite in sprite_sheet_config:
         rect = (start[0], start[1], sprite_sheet_config[sprite]['size'][0], sprite_sheet_config[sprite]['size'][1])
         sprites[sprite].append(pygame.transform.scale(sprite_sheet.subsurface(rect), (rect[2] * 2.5, rect[3] * 2.5)))
 
+# Score
+score = 0
+high_score = 0
+
 # Clock
 clock = pygame.time.Clock()
+
+# Game functions
+def draw_score():
+    for i, num in enumerate(str(score)):
+        screen.blit(sprites['large_numbers'][int(num)], ((screen_width // 2 - ((sprites['large_numbers'][int(num)].get_width() + 5) * len(str(score)) - 5) // 2) + (sprites['large_numbers'][int(num)].get_width() + 5) * i, 20))
 
 def reset():
     # Reset Bird
     bird_group.add(Bird())
-    bird_group.sprite.flap()
+    bird_group.sprite.menu()
 
     # Reset Ground
     for ground in ground_group:
@@ -47,6 +56,9 @@ def menu(events):
             global game_state
             game_state = 'ready'
 
+    # Update Background
+    background_group.update()
+
     # Update Ground
     ground_group.update()
 
@@ -55,7 +67,7 @@ def menu(events):
     bird_group.update()
 
     # Draw Objects
-    screen.blit(sprites['background_day'][0], (0, 0))
+    background_group.draw(screen)
     ground_group.draw(screen)
     bird_group.draw(screen)
     screen.blit(sprites['FlapPy Bird'][0], (screen_width // 2 - sprites['FlapPy Bird'][0].get_width() // 2, 100))
@@ -68,6 +80,9 @@ def ready(events):
             game_state = 'game'
             bird_group.sprite.flap()
 
+    # Update Background
+    background_group.update()
+
     # Update Ground
     ground_group.update()
 
@@ -76,20 +91,21 @@ def ready(events):
     bird_group.update()
 
     # Draw Objects
-    screen.blit(sprites['background_day'][0], (0, 0))
+    background_group.draw(screen)
     ground_group.draw(screen)
+    draw_score()
     bird_group.draw(screen)
-    screen.blit(sprites['FlapPy Bird'][0], (screen_width // 2 - sprites['FlapPy Bird'][0].get_width() // 2, 100))
     screen.blit(sprites['ready'][0], (screen_width // 2 - sprites['ready'][0].get_width() // 2, screen_height // 2 + 50))
+    screen.blit(sprites['get_ready'][0], (screen_width // 2 - sprites['get_ready'][0].get_width() // 2, 100))
 
 def game(events):
     for event in events:
         if event.type == KEYDOWN:
-            if event.key == K_SPACE:
-                if bird_group.sprite.living:
-                    bird_group.sprite.flap()
-                else:
-                    reset()
+            if event.key == K_SPACE and bird_group.sprite.living:
+                bird_group.sprite.flap()
+
+    # Update Background
+    background_group.update()
 
     # Update Ground
     ground_group.update()
@@ -105,12 +121,60 @@ def game(events):
             ground.speed = 0
 
     # Draw Objects
-    screen.blit(sprites['background_day'][0], (0, 0))
+    background_group.draw(screen)
     ground_group.draw(screen)
+    draw_score()
     bird_group.draw(screen)
 
+    # Check Game Over
+    if bird_group.sprite.living == False:
+        global game_state
+        game_state = 'game_over'
+        for ground in ground_group:
+            ground.speed = 0
+
+        bird_group.sprite.die(ground_group.sprites()[0])
+
+def game_over(events):
+    for event in events:
+        if event.type == KEYDOWN and event.key == K_SPACE:
+            global game_state
+            game_state = 'ready'
+            reset()
+
+    # Draw Objects
+    background_group.draw(screen)
+    ground_group.draw(screen)
+    draw_score()
+    bird_group.draw(screen)
+    screen.blit(sprites['game_over'][0], (screen_width // 2 - sprites['game_over'][0].get_width() // 2, 100))
+    screen.blit(sprites['leaderboard'][0], (screen_width // 2 - sprites['leaderboard'][0].get_width() // 2, screen_height // 2 - sprites['leaderboard'][0].get_height() // 2))
+
 # Game Classes
-# Bird
+class Background(pygame.sprite.Sprite):
+    def __init__(self, pos_x = 0):
+        super().__init__()
+
+        self.image = sprites['background_day'][0]
+        self.rect = self.image.get_rect()
+        self.size = self.image.get_size()
+        self.rect[0] = pos_x
+        self.speed = 1
+        self.frame = 0
+
+    def update(self):
+        if self.frame == 0:
+            self.rect[0] -= self.speed
+            if self.rect[0] <= -screen_width:
+                self.rect[0] = screen_width
+
+                if (score // 50) % 2 == 1:
+                    self.image = sprites['background_night'][0]
+                else:
+                    self.image = sprites['background_day'][0]
+
+        self.frame = (self.frame + 1) % 2
+
 class Bird(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -134,7 +198,6 @@ class Bird(pygame.sprite.Sprite):
         if self.rect[1] + self.speed < 0:
             self.rect[1] = 0
             self.speed = 0
-            self.rotate_speed = 0
 
         else:
             self.rect[1] += self.speed
@@ -173,8 +236,6 @@ class Bird(pygame.sprite.Sprite):
         self.rect[1] = screen_height // 2 - self.size[1] // 2
         self.angle = 0
 
-bird_group = pygame.sprite.GroupSingle(Bird())
-
 class Ground(pygame.sprite.Sprite):
     def __init__(self, pos_x= 0):
         super().__init__()
@@ -195,8 +256,6 @@ class Ground(pygame.sprite.Sprite):
     def reset(self):
         self.speed = 5
 
-ground_group = pygame.sprite.Group(Ground(), Ground(screen_width))
-
 class StartButton(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -208,6 +267,9 @@ class StartButton(pygame.sprite.Sprite):
         self.rect[0] = screen_width // 2 - self.size[0] // 2
         self.rect[1] = screen_height - 150
 
+background_group = pygame.sprite.Group(Background(), Background(screen_width))
+bird_group = pygame.sprite.GroupSingle(Bird())
+ground_group = pygame.sprite.Group(Ground(), Ground(screen_width))
 start_button_group = pygame.sprite.GroupSingle(StartButton())
 
 game_state = 'menu'
@@ -224,10 +286,12 @@ while True:
     # Game Logic
     if game_state == 'menu':
         menu(events)
-    elif game_state == 'ready':
+    if game_state == 'ready':
         ready(events)
-    elif game_state == 'game':
+    if game_state == 'game':
         game(events)
+    if game_state == 'game_over':
+        game_over(events)
 
     # Update
     clock.tick(fps)
