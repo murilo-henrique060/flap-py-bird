@@ -15,7 +15,6 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('FlapPy Bird')
 
 fps = 30
-tick = 0
 
 # Sprites
 sprite_path = os.path.join(base_path, 'assets\\sprites')
